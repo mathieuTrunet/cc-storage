@@ -10,6 +10,7 @@ local files = {
   "format_test.lua",
   "index_test.lua",
   "inventory_test.lua",
+  "ui_test.lua",
 }
 
 for _, file in ipairs(files) do
