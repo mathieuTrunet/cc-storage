@@ -1,8 +1,17 @@
 local dir = fs.getDir(shell.getRunningProgram())
-local peripherals = dofile(fs.combine(dir, "peripherals.lua"))
-local index       = dofile(fs.combine(dir, "lib/index.lua"))
-local format      = dofile(fs.combine(dir, "lib/format.lua"))
-local config      = dofile(fs.combine(dir, "config.lua"))
+
+-- dofile always loads into _G. shell is injected only into the program environment.
+local function load(relative)
+  local path = fs.combine(dir, relative)
+  local chunk, err = loadfile(path, nil, _ENV)
+  if not chunk then error(err, 0) end
+  return chunk()
+end
+
+local peripherals = load("peripherals.lua")
+local index       = load("lib/index.lua")
+local format      = load("lib/format.lua")
+local config      = load("config.lua")
 
 local verbose = ({ ... })[1] == "-v"
 
