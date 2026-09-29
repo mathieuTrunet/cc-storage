@@ -45,7 +45,7 @@ These functions are pure. They live under `src/lib`, take plain tables, and do n
 
 ## Data
 
-The list is the index built from a scan:
+The list is the index built from a scan. Inventories do not report insertions, so the terminal scans again every second and redraws when a total changes. A transfer scans immediately, then shows how many items moved.
 
 - [src/peripherals.lua](../src/peripherals.lua) lists inventories and scans them, skipping names in `config.excluded` and `config.outputChest`.
 - [src/lib/index.lua](../src/lib/index.lua) groups that scan by item id. Each item has a total and a list of locations (`inventory`, `slot`, `count`).

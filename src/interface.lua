@@ -13,6 +13,9 @@ local index       = load("lib/index.lua")
 local format      = load("lib/format.lua")
 local config      = load("config.lua")
 
+-- Inventories do not emit a change event, so the list is rescanned on this timer.
+local REFRESH_SECONDS = 1
+
 local query = ""
 local scroll = 0
 local selected = nil
@@ -45,7 +48,29 @@ local function reload()
   local results, errors = peripherals.scanAll(excludedNames())
   idx = index.build(results)
   names = index.itemNames(idx)
+  if selected and index.getTotal(idx, selected) == 0 then
+    selected = nil
+  end
   return errors
+end
+
+local function noteScan(errors)
+  local scanStatus = firstError(errors)
+  if scanStatus then
+    status = scanStatus
+  elseif status:find("^scan error:") then
+    status = ""
+  end
+end
+
+-- Names, totals, selection, and status. Slot moves that keep the same totals
+-- still refresh the index, but they do not need a redraw.
+local function viewKey()
+  local parts = { selected or "", status or "" }
+  for i, name in ipairs(names) do
+    parts[#parts + 1] = name .. "\1" .. index.getTotal(idx, name)
+  end
+  return table.concat(parts, "\0")
 end
 
 local function filteredNames()
@@ -155,15 +180,20 @@ local function onClick(button, x, y)
   end
 end
 
-local errors = reload()
-local scanStatus = firstError(errors)
-if scanStatus then status = scanStatus end
-
+noteScan(reload())
 redraw()
+
+local refreshTimer = os.startTimer(REFRESH_SECONDS)
 
 while true do
   local event, a, b, c = os.pullEvent()
-  if event == "char" or event == "paste" then
+  local redrawNow = true
+  if event == "timer" and a == refreshTimer then
+    local before = viewKey()
+    noteScan(reload())
+    refreshTimer = os.startTimer(REFRESH_SECONDS)
+    redrawNow = viewKey() ~= before
+  elseif event == "char" or event == "paste" then
     query = ui.type(query, a)
     scroll = 0
   elseif event == "key" and (a == keys.backspace or a == keys.delete) then
@@ -174,6 +204,8 @@ while true do
     scroll = ui.scrollBy(scroll, a, #filteredNames(), ui.layout(height).listHeight)
   elseif event == "mouse_click" then
     onClick(a, b, c)
+  else
+    redrawNow = false
   end
-  redraw()
+  if redrawNow then redraw() end
 end
