@@ -4,11 +4,12 @@
 --   install
 -- Needs a public repo and HTTP access to api.github.com and raw.githubusercontent.com.
 -- Files land next to this program, with the src/ prefix removed, so scan.lua can
--- dofile its siblings.
+-- dofile its siblings. config.json is created only when missing.
 
 local REPO_URL = "https://github.com/mathieuTrunet/cc-storage"
 local BRANCH = "main"
 local SOURCE = "src"
+local CONFIG_FILE = "config.json"
 
 local HEADERS = {
   ["User-Agent"] = "cc-storage-install",
@@ -81,13 +82,25 @@ local function sourceFiles(owner, name)
   return files
 end
 
+local function programDir()
+  return fs.getDir(shell.getRunningProgram())
+end
+
 local function localPath(remotePath)
   local relative = remotePath:sub(#SOURCE + 2)
-  local base = fs.getDir(shell.getRunningProgram())
+  local base = programDir()
   if base == "" then
     return relative
   end
   return fs.combine(base, relative)
+end
+
+local function configPath()
+  local base = programDir()
+  if base == "" then
+    return CONFIG_FILE
+  end
+  return fs.combine(base, CONFIG_FILE)
 end
 
 local function writeFile(path, contents)
@@ -131,6 +144,21 @@ local function main()
   end
 
   print("Installed " .. #files .. " files.")
+
+  local path = configPath()
+  if fs.exists(path) then
+    print("Keeping existing " .. path)
+  else
+    local raw = string.format(
+      "https://raw.githubusercontent.com/%s/%s/%s/%s",
+      owner,
+      name,
+      textutils.urlEncode(BRANCH),
+      CONFIG_FILE
+    )
+    writeFile(path, readUrl(raw))
+    print("Created " .. path)
+  end
 end
 
 main()

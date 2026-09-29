@@ -6,6 +6,7 @@ local root = testsDir:match("^(.*)/") or "."
 local harness = dofile(testsDir .. "/harness.lua")
 
 local files = {
+  "config_test.lua",
   "format_test.lua",
   "index_test.lua",
   "inventory_test.lua",

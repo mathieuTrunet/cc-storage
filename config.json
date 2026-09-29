@@ -1,0 +1,8 @@
+{
+  "syntax": {
+    "outputChest": "string | null. Peripheral name as shown on the modem, for example \"minecraft:chest_3\". null if unused.",
+    "excluded": "[string]. Peripheral names to skip, for example [\"minecraft:chest_0\", \"top\"]."
+  },
+  "outputChest": null,
+  "excluded": []
+}
